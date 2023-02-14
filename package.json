@@ -1,6 +1,6 @@
 {
   "name": "@bly-th/tailwind-css-variables",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Generates custom property values from tailwind config",
   "main": "index.js",
   "scripts": {
