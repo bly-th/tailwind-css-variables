@@ -15,6 +15,7 @@ function generatePluginCss(overrides) {
     plugins: [
       customPlugin({
         colors: 'color',
+        fontFamily: 'font',
       }),
     ],
   };
@@ -32,11 +33,17 @@ test('css variables can be generated', () => {
       colors: {
         primary: '#000',
       },
+      fontFamily: {
+        base: ['Figtree', 'sans-serif'],
+        heading: ['Albra', 'serif'],
+      },
     },
   }).then(css => {
     expect(css).toMatchCss(`
     :root {
       --color-primary: #000;
+      --font-base: Figtree,sans-serif;
+      --font-heading: Albra,serif;
     }
     `);
   });
