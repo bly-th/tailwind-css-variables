@@ -13,21 +13,6 @@ Then add the plugin to your `tailwind.config.js` file:
 ```js
 // tailwind.config.js
 module.exports = {
-  theme: {
-    // ...
-    // Optional. Your plugin might not have any options at all.
-    variables: {
-      // ...
-      YOUR_PLUGIN_CUSTOM_OPTION: true,
-      // ...
-    },
-  },
-  variants: {
-    // ...
-    // Optional. Your plugin might not have any variants at all.
-    variables: ['responsive'],
-    // ...
-  },
   plugins: [
     // ...
     require('tailwind-css-variables'),
@@ -40,12 +25,8 @@ This plugin will generate following CSS:
 
 ```css
 /* ... */
-.example-utility-class {
-  display: block;
-}
-
-.custom-utility-class {
-  background-color: red;
+:root {
+  --color-primary: #000;
 }
 /* ... */
 ```
