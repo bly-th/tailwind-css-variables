@@ -1,43 +1,87 @@
-const plugin = require('tailwindcss/plugin');
+const _ = require('lodash');
+const flattenColorPalette =
+  require('tailwindcss/lib/util/flattenColorPalette').default;
 
-module.exports = plugin(
-  function ({ addUtilities, theme, variants }) {
-    // If your plugin requires user config,
-    // you can access these options here.
-    // Docs: https://tailwindcss.com/docs/plugins#exposing-options
-    const options = theme('variables');
-
-    // Add CSS-in-JS syntax to create utility classes.
-    // Docs: https://tailwindcss.com/docs/plugins#adding-utilities
-    const utilities = {
-      '.example-utility-class': {
-        display: 'block',
-      },
+const flattenFontFamily = obj => {
+  return Object.entries(obj).reduce((prevObj, [key, value]) => {
+    return {
+      ...prevObj,
+      [key]: value.join(','),
     };
+  }, {});
+};
 
-    // Conditionally add utility class based on user configuration.
-    if (options.YOUR_PLUGIN_CUSTOM_OPTION) {
-      utilities['.custom-utility-class'] = {
-        'background-color': 'red',
-      };
-    }
+const flattenFontSize = obj => {
+  return Object.entries(obj).reduce((prevObj, [key, value]) => {
+    const [fontSize, options] = Array.isArray(value) ? value : [value];
+    const { lineHeight, letterSpacing } = _.isPlainObject(options)
+      ? options
+      : {
+          lineHeight: options,
+        };
 
-    addUtilities(utilities, {
-      variants: variants('variables'),
-    });
-  },
-  {
-    theme: {
-      // Default options for your custom plugin.
-      // Docs: https://tailwindcss.com/docs/plugins#exposing-options
-      variables: {
-        YOUR_PLUGIN_CUSTOM_OPTION: false,
-      },
-    },
-    variants: {
-      // Default variants for your custom plugin.
-      // Docs: https://tailwindcss.com/docs/plugins#variants
-      variables: ['responsive'],
-    },
+    return {
+      ...prevObj,
+      [key]: fontSize,
+      ...(lineHeight === undefined
+        ? {}
+        : {
+            [`${key}-line-height`]: lineHeight,
+          }),
+      ...(letterSpacing === undefined
+        ? {}
+        : {
+            [`${key}-letter-spacing`]: letterSpacing,
+          }),
+    };
+  }, {});
+};
+
+const getFixedKey = key => {
+  if (key === 'DEFAULT' || key === 'default') {
+    return 'default';
   }
-);
+  return key.replace('/', '-').replace('.', '_');
+};
+
+module.exports = function (variablesNames) {
+  return ({ addComponents, config }) => {
+    const variableRoot = {};
+
+    Object.entries(variablesNames).forEach(([key, customName]) => {
+      if (!customName) return;
+      const tailwindPrefix = config('prefix', '');
+      const originalConfig = config(`theme.${key}`, []);
+
+      let modifiedConfig = {};
+
+      switch (key) {
+        case 'colors':
+          modifiedConfig = flattenColorPalette(originalConfig);
+          break;
+        case 'fontFamily':
+          modifiedConfig = flattenFontFamily(originalConfig);
+          break;
+        case 'fontSize':
+          modifiedConfig = flattenFontSize(originalConfig);
+          break;
+
+        default:
+          modifiedConfig = originalConfig;
+          break;
+      }
+
+      Object.entries(modifiedConfig).forEach(([configKey, value]) => {
+        const cssVariableName = `--${tailwindPrefix}${customName}-${getFixedKey(
+          configKey
+        )}`;
+        variableRoot[cssVariableName] = value;
+      });
+    });
+
+    const root = {
+      ':root': variableRoot,
+    };
+    addComponents(root);
+  };
+};
